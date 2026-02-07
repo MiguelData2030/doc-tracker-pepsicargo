@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PepsiCargo Doc-Tracker MVP</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="app.js" defer></script>
+</head>
+
+<body>
+    <!-- AUTH SCREEN -->
+    <div id="auth-container">
+        <div class="modal-content glass">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div class="brand-dot" style="margin: 0 auto 1rem; width: 20px; height: 20px;"></div>
+                <h1 style="font-size: 1.5rem;">Doc-Tracker</h1>
+                <p style="color: var(--text-muted);">Acceso Privado PepsiCargo</p>
+            </div>
+            <form id="login-form">
+                <div class="input-group" style="margin-bottom: 1.5rem;">
+                    <label>Correo Corporativo</label>
+                    <input type="email" id="login-email" placeholder="usuario@pepsico.com" required>
+                </div>
+                <div class="input-group" style="margin-bottom: 2rem;">
+                    <label>Contraseña</label>
+                    <input type="password" id="login-pass" placeholder="••••••••" required>
+                </div>
+                <button type="submit" style="width: 100%; justify-content: center;">Iniciar Sesión</button>
+            </form>
+            <p id="login-error"
+                style="color: var(--danger); margin-top: 1rem; text-align: center; display: none; font-size: 0.85rem;">
+            </p>
+        </div>
+    </div>
+
+    <!-- MAIN APP (Hidden by default) -->
+    <div id="app-container" style="display: none;">
+        <!-- SIDEBAR NAV -->
+        <nav class="sidebar">
+            <div class="brand">
+                <div class="brand-dot"></div>
+                <span class="brand-name">Doc-Tracker</span>
+            </div>
+
+            <ul class="nav-links">
+                <li class="nav-item active" onclick="showSection('dashboard')">
+                    <i data-lucide="layout-dashboard"></i> Dashboard
+                </li>
+                <li class="nav-item" onclick="showSection('fleet')">
+                    <i data-lucide="truck"></i> Gestión de Flota
+                </li>
+                <li class="nav-item" onclick="showSection('onboarding')">
+                    <i data-lucide="plus-circle"></i> Nuevo Vehículo
+                </li>
+                <li class="nav-item" onclick="showSection('reports')">
+                    <i data-lucide="bar-chart-3"></i> Reportes & BI
+                </li>
+                <li class="nav-item admin-only" onclick="showSection('admin')" style="display: none;">
+                    <i data-lucide="shield-check"></i> Admin Usuarios
+                </li>
+            </ul>
+
+            <div class="user-badge glass" style="margin-bottom: 10px;">
+                <i data-lucide="user"></i>
+                <span id="user-mail">Invitado</span>
+                <span id="current-rol" class="role-tag">Cargando</span>
+            </div>
+            <button class="secondary" onclick="handleLogout()" style="width: 100%; font-size: 0.8rem; padding: 8px;">
+                <i data-lucide="log-out" size="14"></i> Cerrar Sesión
+            </button>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-wrapper">
+            <header>
+                <div>
+                    <h1 style="font-size: 1.8rem;">Control de Flota Global</h1>
+                    <p id="system-status" style="color: var(--text-muted); margin-top: 5px;">
+                        <span class="semaforo bg-success" style="width: 8px; height: 8px;"></span> Sistema Conectado
+                    </p>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="secondary" onclick="demoSync()" id="btn-sync-runt">
+                        <i data-lucide="refresh-cw"></i> Sincronizar RUNT
+                    </button>
+                    <div id="demo-badge"
+                        style="display:none; color: var(--warning); font-size: 0.8rem; align-items: center; gap: 5px;">
+                        <i data-lucide="alert-triangle" size="14"></i> MODO DEMO
+                    </div>
+                </div>
+            </header>
+
+            <!-- SECCIÓN: DASHBOARD -->
+            <section id="section-dashboard">
+                <div class="stats-grid">
+                    <div class="stat-card" style="--status-color: var(--danger)">
+                        <div class="stat-label">Críticos (Vencidos)</div>
+                        <div class="stat-value" id="count-danger">--</div>
+                    </div>
+                    <div class="stat-card" style="--status-color: var(--warning)">
+                        <div class="stat-label">Alerta (15 días)</div>
+                        <div class="stat-value" id="count-warning">--</div>
+                    </div>
+                    <div class="stat-card" style="--status-color: var(--success)">
+                        <div class="stat-label">Total en Regla</div>
+                        <div class="stat-value" id="count-success">--</div>
+                    </div>
+                    <div class="stat-card" style="--status-color: var(--accent-blue)">
+                        <div class="stat-label">Flota Controlada</div>
+                        <div class="stat-value" id="count-total">--</div>
+                    </div>
+                </div>
+
+                <div class="section-container">
+                    <h2>Vista de Vencimientos Próximos</h2>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>PLACA</th>
+                                    <th>CATEGORÍA</th>
+                                    <th>DOCUMENTO</th>
+                                    <th>FECHA VENC.</th>
+                                    <th>ESTADO</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vencimientos-body">
+                                <!-- Inyectado por app.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: FLOTA -->
+            <section id="section-fleet" style="display:none;">
+                <div class="section-container">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h2>Inventario de Vehículos</h2>
+                        <input type="text" placeholder="Buscar placa..." id="fleet-search" style="width: 250px;">
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>PLACA</th>
+                                    <th>PROPIETARIO</th>
+                                    <th>CATEGORÍA</th>
+                                    <th>SOAT</th>
+                                    <th>RTM</th>
+                                    <th class="admin-only">ACCIONES</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fleet-table-body">
+                                <!-- Inyectado por app.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: ONBOARDING -->
+            <section id="section-onboarding" style="display:none;">
+                <div class="section-container" style="max-width: 800px; margin: 0 auto;">
+                    <h2>Registro Único de Vehículo</h2>
+                    <form id="onboarding-form">
+                        <div class="form-grid" style="grid-template-columns: repeat(2, 1fr);">
+                            <div class="input-group">
+                                <label>Número de Placa</label>
+                                <input type="text" placeholder="ABC123D" required id="f_placa">
+                            </div>
+                            <div class="input-group">
+                                <label>Propietario (NIT/CC)</label>
+                                <input type="text" placeholder="900..." required id="f_nit">
+                            </div>
+                            <div class="input-group">
+                                <label>Categoría</label>
+                                <select id="f_categoria" onchange="toggleTechnicalFields()">
+                                    <option value="PEPSICARGO">PEPSICARGO (Tercero)</option>
+                                    <option value="PROPIA">PROPIA (Flota Interna)</option>
+                                    <option value="CORP">CORPORATIVA</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Sede Operativa</label>
+                                <select id="f_sede">
+                                    <option value="BOG">Bogotá - Central</option>
+                                    <option value="MED">Medellín</option>
+                                    <option value="CAL">Cali</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="technical-fields"
+                            style="display:none; margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 2rem;">
+                            <h3 style="margin-bottom: 1.5rem; font-size: 1rem; color: var(--accent-green);">Datos
+                                Técnicos
+                                (Flota Propios)</h3>
+                            <div class="form-grid" style="grid-template-columns: repeat(2, 1fr);">
+                                <div class="input-group">
+                                    <label>VIN / Chasis</label>
+                                    <input type="text" placeholder="VIN..." id="f_vin">
+                                </div>
+                                <div class="input-group">
+                                    <label>Capacidad Carga (Kg)</label>
+                                    <input type="number" placeholder="5000" id="f_carga">
+                                </div>
+                                <div class="input-group">
+                                    <label>Número Motor</label>
+                                    <input type="text" placeholder="Engine Code" id="f_motor">
+                                </div>
+                                <div class="input-group">
+                                    <label>Fecha Matrícula Inicial</label>
+                                    <input type="date" id="f_matricula">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
+                            <button type="button" class="secondary" onclick="showSection('dashboard')">Cancelar</button>
+                            <button type="submit">Finalizar Registro</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: REPORTES -->
+            <section id="section-reports" style="display:none;">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Cumplimiento Global</div>
+                        <div class="stat-value" id="perc-cumplimiento">--%</div>
+                    </div>
+                </div>
+                <div class="section-container">
+                    <h2>Ranking por Sede (Weekly Digest)</h2>
+                    <div id="sedes-ranking">
+                        <!-- Cards de sedes inyectadas -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: ADMINISTRACIÓN -->
+            <section id="section-admin" style="display:none;">
+                <div class="stats-grid" style="grid-template-columns: 2fr 1fr;">
+                    <div class="section-container">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h2>Gestión de Usuarios</h2>
+                            <button id="btn-save-users" class="primary"
+                                style="display: none; background: var(--accent-blue); padding: 8px 16px; font-size: 0.9rem;"
+                                onclick="commitAdminChanges()">
+                                <i data-lucide="save"></i> Actualizar Cambios
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>EMAIL</th>
+                                        <th>ROL</th>
+                                        <th>ESTADO</th>
+                                        <th>CONTRASEÑA</th>
+                                        <th>ACCIONES</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-table-body">
+                                    <!-- Inyectado por app.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="section-container">
+                        <h2>Nuevo Usuario</h2>
+                        <form id="admin-create-user">
+                            <div class="input-group" style="margin-bottom: 1rem;">
+                                <label>Email</label>
+                                <input type="email" id="u_email" placeholder="corp@pepsi.com" required>
+                            </div>
+                            <div class="input-group" style="margin-bottom: 1rem;">
+                                <label>Password Inicial</label>
+                                <input type="password" id="u_pass" required>
+                            </div>
+                            <div class="input-group" style="margin-bottom: 1.5rem;">
+                                <label>Perfil de Acceso</label>
+                                <select id="u_rol">
+                                    <option value="ADMIN">Administrador (Total)</option>
+                                    <option value="GERENCIA">Gerencia (Solo Lectura)</option>
+                                    <option value="VISOR_PARCIAL">Visor Parcial (Pepsi/Propia)</option>
+                                    <option value="VISOR_TOTAL">Visor Total (Pepsi/Propia/Corp)</option>
+                                </select>
+                            </div>
+                            <button type="submit" style="width: 100%; justify-content: center;">Crear Acceso</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- NOTIFICATION SYSTEM -->
+        <div id="toast"
+            style="position:fixed; bottom: 20px; right: 20px; background: var(--success); color:black; padding: 12px 24px; border-radius: 12px; display:none; z-index:1000; font-weight:700;">
+        </div>
+
+        <!-- RUNT SYNC MODAL -->
+        <div id="modal-runt-sync" class="modal-overlay" style="display:none;">
+            <div class="modal-content glass" style="max-width: 500px; text-align: center; padding: 3rem;">
+                <div id="sync-loading">
+                    <div class="spinner"></div>
+                    <h2 style="margin-top: 2rem;">Consultando Ministerio</h2>
+                    <p style="color: var(--text-muted); margin-top: 10px;">Conectando con el portal RUNT para extraer
+                        SOAT y
+                        RTM...</p>
+                </div>
+
+                <div id="sync-results" style="display:none; text-align: left;">
+                    <h2 style="margin-bottom: 2rem; color: var(--accent-green);">Datos Obtenidos</h2>
+                    <div class="data-frame"
+                        style="background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span>SOAT Vencimiento:</span>
+                            <strong id="res-soat">--</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span>RTM Vencimiento:</span>
+                            <strong id="res-rtm">--</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Propietario:</span>
+                            <strong id="res-owner">--</strong>
+                        </div>
+                    </div>
+                    <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                        <button class="secondary" style="flex:1" onclick="closeRuntModal()">Cerrar</button>
+                        <button style="flex:2" onclick="confirmarRegistroRunt()">Confirmar y Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Lucide Initialization
+            lucide.createIcons();
+        </script>
+</body>
+
+</html>

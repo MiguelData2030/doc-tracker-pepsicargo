@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="app.js" defer></script>
 </head>
 
@@ -51,8 +52,14 @@
                 <li class="nav-item active" onclick="showSection('dashboard')">
                     <i data-lucide="layout-dashboard"></i> Dashboard
                 </li>
-                <li class="nav-item" onclick="showSection('fleet')">
-                    <i data-lucide="truck"></i> Gestión de Flota
+                <li class="nav-item" onclick="showFleet('PEPSICARGO')">
+                    <i data-lucide="truck"></i> Flota PepsiCargo
+                </li>
+                <li class="nav-item" onclick="showFleet('PROPIA')">
+                    <i data-lucide="truck"></i> Flota Propia
+                </li>
+                <li class="nav-item" onclick="showFleet('CORP')">
+                    <i data-lucide="truck"></i> V. Corporativos
                 </li>
                 <li class="nav-item" onclick="showSection('onboarding')">
                     <i data-lucide="plus-circle"></i> Nuevo Vehículo
@@ -85,9 +92,6 @@
                     </p>
                 </div>
                 <div style="display: flex; gap: 1rem;">
-                    <button class="secondary" onclick="demoSync()" id="btn-sync-runt">
-                        <i data-lucide="refresh-cw"></i> Sincronizar RUNT
-                    </button>
                     <div id="demo-badge"
                         style="display:none; color: var(--warning); font-size: 0.8rem; align-items: center; gap: 5px;">
                         <i data-lucide="alert-triangle" size="14"></i> MODO DEMO
@@ -103,7 +107,7 @@
                         <div class="stat-value" id="count-danger">--</div>
                     </div>
                     <div class="stat-card" style="--status-color: var(--warning)">
-                        <div class="stat-label">Alerta (15 días)</div>
+                        <div class="stat-label">Alerta (30 días)</div>
                         <div class="stat-value" id="count-warning">--</div>
                     </div>
                     <div class="stat-card" style="--status-color: var(--success)">
@@ -116,17 +120,112 @@
                     </div>
                 </div>
 
+                <!-- CATEGORY BREAKDOWN ROW -->
+                <div class="dashboard-row"
+                    style="grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="section-container"
+                        style="padding: 1rem; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--accent-green);">
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">PEPSICARGO</div>
+                            <div style="font-size: 1.2rem; font-weight: 700;" id="count-pepsicargo">--</div>
+                        </div>
+                        <i data-lucide="truck" style="color: var(--accent-green); opacity: 0.5;"></i>
+                    </div>
+                    <div class="section-container"
+                        style="padding: 1rem; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--accent-blue);">
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">FLOTA PROPIA</div>
+                            <div style="font-size: 1.2rem; font-weight: 700;" id="count-propia">--</div>
+                        </div>
+                        <i data-lucide="car" style="color: var(--accent-blue); opacity: 0.5;"></i>
+                    </div>
+                    <div class="section-container"
+                        style="padding: 1rem; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #888;">
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">CORPORATIVOS</div>
+                            <div style="font-size: 1.2rem; font-weight: 700;" id="count-corp">--</div>
+                        </div>
+                        <i data-lucide="users" style="color: #888; opacity: 0.5;"></i>
+                    </div>
+                </div>
+
+                <div class="dashboard-row">
+                    <div class="section-container" style="margin-bottom: 0;">
+                        <h3
+                            style="margin-bottom: 1.5rem; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">
+                            Vigilancia por Sede Operativa</h3>
+                        <div style="height: 300px;">
+                            <canvas id="chart-sedes"></canvas>
+                        </div>
+                    </div>
+                    <div class="section-container" style="margin-bottom: 0;">
+                        <h3
+                            style="margin-bottom: 1.5rem; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">
+                            Salud de Documentación</h3>
+                        <div style="height: 300px;">
+                            <canvas id="chart-status"></canvas>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="section-container">
-                    <h2>Vista de Vencimientos Próximos</h2>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <h2 style="margin-bottom: 4px;">Alertas Prioritarias</h2>
+                            <p style="font-size: 0.8rem; color: var(--text-muted);">Identificación de casos críticos
+                                requiriendo acción inmediata</p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <!-- FILTRO LOCAL PLACA -->
+                            <input type="text" id="dash-filter-placa" placeholder="Buscar placa..."
+                                style="background:rgba(255,255,255,0.05); border:1px solid var(--border-color); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; color: #fff; width: 120px;"
+                                oninput="filterDashboardAlerts()">
+
+                            <!-- FILTRO LOCAL SEDE -->
+                            <select id="dash-filter-sede"
+                                style="background:rgba(255,255,255,0.05); border:1px solid var(--border-color); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; color: #fff;"
+                                onchange="filterDashboardAlerts()">
+                                <option value="">Todas las Sedes</option>
+                                <option value="SANTO_DOMINGO">Santo Domingo</option>
+                                <option value="FUNZA">Funza</option>
+                                <option value="CALI">Cali</option>
+                                <option value="ESPINAL">Espinal</option>
+                                <option value="SANTA_MARTA">Santa Marta</option>
+                            </select>
+
+                            <!-- FILTRO LOCAL DOCUMENTO -->
+                            <select id="dash-filter-doc"
+                                style="background:rgba(255,255,255,0.05); border:1px solid var(--border-color); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; color: #fff;"
+                                onchange="filterDashboardAlerts()">
+                                <option value="">Todos los Documentos</option>
+                                <option value="SOAT">SOAT</option>
+                                <option value="RTM">RTM</option>
+                                <option value="FUMIGACIÓN">Fumigación</option>
+                                <option value="SANIDAD">Sanidad</option>
+                            </select>
+
+                            <button class="secondary"
+                                style="font-size: 0.8rem; padding: 6px 12px; background: rgba(52,199,89,0.1); color: var(--success); border-color: rgba(52,199,89,0.2);"
+                                onclick="exportDashboardAlertsToCSV()">
+                                <i data-lucide="download" size="14"></i> Exportar
+                            </button>
+                            <button class="secondary" style="font-size: 0.8rem; padding: 6px 12px;"
+                                onclick="renderDashboard()">
+                                <i data-lucide="refresh-cw" size="14"></i>
+                            </button>
+                        </div>
+                    </div>
                     <div class="table-responsive">
-                        <table>
+                        <table style="border-collapse: separate; border-spacing: 0 8px; background: transparent;">
                             <thead>
-                                <tr>
-                                    <th>PLACA</th>
-                                    <th>CATEGORÍA</th>
-                                    <th>DOCUMENTO</th>
-                                    <th>FECHA VENC.</th>
-                                    <th>ESTADO</th>
+                                <tr id="dashboard-thead" style="background: transparent;">
+                                    <th style="background: transparent;">PLACA / MARCA</th>
+                                    <th style="background: transparent;">FLOTA</th>
+                                    <th style="background: transparent;">SEDE</th>
+                                    <th style="background: transparent;">DOCUMENTO</th>
+                                    <th style="background: transparent;">VENCIMIENTO</th>
+                                    <th style="background: transparent; text-align: center;">DÍAS REST.</th>
                                 </tr>
                             </thead>
                             <tbody id="vencimientos-body">
@@ -141,9 +240,42 @@
             <section id="section-fleet" style="display:none;">
                 <div class="section-container">
                     <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;">
                         <h2>Inventario de Vehículos</h2>
-                        <input type="text" placeholder="Buscar placa..." id="fleet-search" style="width: 250px;">
+                        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                            <div style="position: relative;">
+                                <input type="text" placeholder="Buscar placa..." id="fleet-search"
+                                    style="width: 180px; padding-left: 35px;">
+                                <i data-lucide="search"
+                                    style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 14px; color: var(--text-muted);"></i>
+                            </div>
+
+                            <select id="filter-sede"
+                                style="width: 140px; padding: 8px 12px; font-size: 0.8rem; border-radius: 8px;">
+                                <option value="ALL">Todas las Sedes</option>
+                                <option value="SANTO DOMINGO">Santo Domingo</option>
+                                <option value="INNOVA">Innova</option>
+                                <option value="FUNZA">Funza</option>
+                                <option value="MEDELLIN">Medellín</option>
+                                <option value="PEREIRA">Pereira</option>
+                                <option value="CALI">Cali</option>
+                                <option value="BARRANQUILLA">Barranquilla</option>
+                                <option value="BUCARAMANGA">Bucaramanga</option>
+                            </select>
+
+                            <select id="filter-status"
+                                style="width: 140px; padding: 8px 12px; font-size: 0.8rem; border-radius: 8px;">
+                                <option value="ALL">Todos los Estados</option>
+                                <option value="RED">Vencidos (Rojo)</option>
+                                <option value="YELLOW">Alerta (Amarillo)</option>
+                                <option value="GREEN">Vigentes (Verde)</option>
+                            </select>
+
+                            <button class="secondary" onclick="resetFilters()"
+                                style="padding: 8px; min-width: auto; border-radius: 8px;" title="Limpiar Filtros">
+                                <i data-lucide="refresh-cw" style="width: 14px;"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="table-responsive">
                         <table>
@@ -167,66 +299,79 @@
 
             <!-- SECCIÓN: ONBOARDING -->
             <section id="section-onboarding" style="display:none;">
-                <div class="section-container" style="max-width: 800px; margin: 0 auto;">
+                <div class="section-container" style="max-width: 1200px; margin: 0 auto;">
                     <h2>Registro Único de Vehículo</h2>
-                    <form id="onboarding-form">
-                        <div class="form-grid" style="grid-template-columns: repeat(2, 1fr);">
-                            <div class="input-group">
-                                <label>Número de Placa</label>
-                                <input type="text" placeholder="ABC123D" required id="f_placa">
-                            </div>
-                            <div class="input-group">
-                                <label>Propietario (NIT/CC)</label>
-                                <input type="text" placeholder="900..." required id="f_nit">
-                            </div>
-                            <div class="input-group">
-                                <label>Categoría</label>
-                                <select id="f_categoria" onchange="toggleTechnicalFields()">
-                                    <option value="PEPSICARGO">PEPSICARGO (Tercero)</option>
-                                    <option value="PROPIA">PROPIA (Flota Interna)</option>
-                                    <option value="CORP">CORPORATIVA</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label>Sede Operativa</label>
-                                <select id="f_sede">
-                                    <option value="BOG">Bogotá - Central</option>
-                                    <option value="MED">Medellín</option>
-                                    <option value="CAL">Cali</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div id="technical-fields"
-                            style="display:none; margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 2rem;">
-                            <h3 style="margin-bottom: 1.5rem; font-size: 1rem; color: var(--accent-green);">Datos
-                                Técnicos
-                                (Flota Propios)</h3>
+                    <div class="onboarding-layout">
+                        <!-- Lado Izquierdo: Formulario -->
+                        <form id="onboarding-form" class="glass-form">
                             <div class="form-grid" style="grid-template-columns: repeat(2, 1fr);">
                                 <div class="input-group">
-                                    <label>VIN / Chasis</label>
-                                    <input type="text" placeholder="VIN..." id="f_vin">
+                                    <label>Número de Placa</label>
+                                    <input type="text" placeholder="ABC123D" required id="f_placa">
                                 </div>
                                 <div class="input-group">
-                                    <label>Capacidad Carga (Kg)</label>
-                                    <input type="number" placeholder="5000" id="f_carga">
+                                    <label>Propietario (NIT/CC)</label>
+                                    <input type="text" placeholder="1032..." required id="f_nit">
                                 </div>
                                 <div class="input-group">
-                                    <label>Número Motor</label>
-                                    <input type="text" placeholder="Engine Code" id="f_motor">
+                                    <label>Categoría</label>
+                                    <select id="f_categoria" onchange="toggleTechnicalFields()">
+                                        <option value="PEPSICARGO">PEPSICARGO (Tercero)</option>
+                                        <option value="PROPIA">FLOTA PROPIA (Interna)</option>
+                                        <option value="CORP">VEHÍCULOS CORPORATIVOS</option>
+                                    </select>
                                 </div>
                                 <div class="input-group">
-                                    <label>Fecha Matrícula Inicial</label>
-                                    <input type="date" id="f_matricula">
+                                    <label>Sede Operativa</label>
+                                    <select id="f_sede">
+                                        <option value="SANTO_DOMINGO">Santo Domingo</option>
+                                        <option value="INNOVA">Innova</option>
+                                        <option value="FUNZA">Funza</option>
+                                        <option value="MEDELLIN">Medellín</option>
+                                        <option value="PEREIRA">Pereira</option>
+                                        <option value="CALI">Cali</option>
+                                        <option value="BARRANQUILLA">Barranquilla</option>
+                                        <option value="BUCARAMANGA">Bucaramanga</option>
+                                    </select>
                                 </div>
                             </div>
-                        </div>
 
-                        <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
-                            <button type="button" class="secondary" onclick="showSection('dashboard')">Cancelar</button>
-                            <button type="submit">Finalizar Registro</button>
+                            <div id="technical-fields"
+                                style="display:none; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                                <h3 style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--accent-green);">Datos
+                                    Técnicos</h3>
+                                <div class="form-grid">
+                                    <div class="input-group">
+                                        <label>VIN / Chasis</label>
+                                        <input type="text" placeholder="VIN..." id="f_vin">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Capacidad (Kg)</label>
+                                        <input type="number" placeholder="5000" id="f_carga">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
+                                <button type="button" class="secondary"
+                                    onclick="showSection('dashboard')">Cancelar</button>
+                                <button type="submit" id="btn-onboarding-search">
+                                    <i data-lucide="search"></i> Buscar
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Lado Derecho: Dataframe de Resultados -->
+                        <div id="onboarding-results" class="results-dataframe glass">
+                            <div class="empty-results">
+                                <i data-lucide="info" size="40"></i>
+                                <p>Ingresa los datos y presiona "Buscar" para consultar la información oficial.</p>
+                            </div>
+                            <div id="results-content" style="display:none; width: 100%;">
+                                <!-- Inyectado dinámicamente -->
+                            </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </section>
 
@@ -307,6 +452,40 @@
         <!-- NOTIFICATION SYSTEM -->
         <div id="toast"
             style="position:fixed; bottom: 20px; right: 20px; background: var(--success); color:black; padding: 12px 24px; border-radius: 12px; display:none; z-index:1000; font-weight:700;">
+        </div>
+
+        <!-- UPLOAD DOC MODAL -->
+        <div id="modal-upload-doc" class="modal-overlay"
+            style="display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.8); position:fixed; top:0; left:0; width:100%; height:100%; z-index:2000;">
+            <div class="modal-content glass" style="max-width: 400px; padding: 2rem; width:90%;">
+                <h3 id="upload-doc-title"
+                    style="margin-bottom: 1.5rem; color: var(--accent-green); display:flex; align-items:center; gap:10px;">
+                    <i data-lucide="upload-cloud"></i> Cargar Documento
+                </h3>
+                <input type="hidden" id="upload-placa">
+                <input type="hidden" id="upload-type">
+
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label>Fecha Expedición</label>
+                    <input type="date" id="upload-fecha-exp"
+                        style="width:100%; padding:10px; background:rgba(255,255,255,0.1); border:1px solid var(--border-color); color:white; border-radius:8px;">
+                </div>
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label>Fecha Vencimiento</label>
+                    <input type="date" id="upload-fecha-venc"
+                        style="width:100%; padding:10px; background:rgba(255,255,255,0.1); border:1px solid var(--border-color); color:white; border-radius:8px;">
+                </div>
+                <div class="input-group" style="margin-bottom: 1.5rem;">
+                    <label>Archivo PDF (Máx 50MB)</label>
+                    <input type="file" id="upload-file" accept="application/pdf" style="margin-top:5px;">
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button class="secondary" style="flex:1" onclick="closeUploadModal()">Cancelar</button>
+                    <button class="primary" style="flex:1; justify-content:center;"
+                        onclick="submitDocUpload()">Guardar</button>
+                </div>
+            </div>
         </div>
 
         <!-- RUNT SYNC MODAL -->

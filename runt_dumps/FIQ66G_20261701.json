@@ -1,0 +1,389 @@
+[
+  {
+    "url": "https://portalpublico.runt.gov.co/assets/mf.manifest.prod.json",
+    "data": {
+      "migracion-usuario": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/rnf/migracion-usuario/remoteEntry.js",
+        "routePath": "migracion-usuario",
+        "exposedModule": "./MigracionUsuarioModule",
+        "ngModuleName": "MigracionUsuarioModule",
+        "displayName": "MigracionUsuarioModule",
+        "data": {
+          "funcionalidad": "Migraci\u00f3n Usuarios"
+        }
+      },
+      "migracion-empresarial": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/portalempresarial/migracion-usuario/remoteEntry.js",
+        "routePath": "migracion-empresarial",
+        "exposedModule": "./MigracionUsuarioModule",
+        "ngModuleName": "MigracionUsuarioModule",
+        "displayName": "MigracionUsuarioModule",
+        "data": {
+          "funcionalidad": "Migraci\u00f3n Usuarios"
+        }
+      },
+      "historico-publico": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/historicos/historico-publico/remoteEntry.js",
+        "routePath": "historico-publico",
+        "exposedModule": "./HistoricoModule",
+        "ngModuleName": "HistoricoModule",
+        "displayName": "HistoricoModule",
+        "data": {
+          "funcionalidad": "Funcionalidad historicos"
+        }
+      },
+      "recaudos-fupas": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/recaudo/fupas/remoteEntry.js",
+        "routePath": "recaudosfupas",
+        "exposedModule": "./FupasModule",
+        "ngModuleName": "FupasModule",
+        "displayName": "Fupas"
+      },
+      "recaudos-liquidaciones": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/recaudo/liquidaciones/remoteEntry.js",
+        "routePath": "recaudosliquidaciones",
+        "exposedModule": "./LiquidacionesModule",
+        "ngModuleName": "LiquidacionesModule",
+        "displayName": "Liquidaciones"
+      },
+      "recaudos-pagos": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/recaudo/recaudos-pagos/remoteEntry.js",
+        "routePath": "recaudospagos",
+        "exposedModule": "./RecaudosPagosModule",
+        "ngModuleName": "RecaudosPagosModule",
+        "displayName": "RecaudosPagos"
+      },
+      "gestion-usuario-publico": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/gestion-usuario/remoteEntry.js",
+        "routePath": "gestion-usuario-publico",
+        "exposedModule": "./GestionUsuarioModule",
+        "ngModuleName": "GestionUsuarioModule",
+        "displayName": "GestionUsuarioModule",
+        "data": {
+          "funcionalidad": "GestionUsuarioModule"
+        }
+      },
+      "rna-fth-consulta": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/rnafth/rna-fth-consulta/remoteEntry.js",
+        "routePath": "rna-fth-consulta",
+        "exposedModule": "./RnaFthConsultaModule",
+        "ngModuleName": "RnaFthConsultaModule",
+        "displayName": "RnaFthConsulta"
+      },
+      "oa-portal-organismos-mr": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/organismosdeapoyo/oa-portal-organismos-mr/remoteEntry.js",
+        "routePath": "organismos-de-apoyo",
+        "exposedModule": "./FeaturesModule",
+        "ngModuleName": "FeaturesModule",
+        "displayName": "FeaturesModule"
+      },
+      "oa-novedades": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/organismosdeapoyo/oa-portal-organismos-mr/remoteEntry.js",
+        "routePath": "oa-portal-organismos-mr",
+        "exposedModule": "./NovedadesOaModule",
+        "ngModuleName": "NovedadesOaModule",
+        "displayName": "organismosapoyo"
+      },
+      "oa-pnj": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/organismosdeapoyo/oa-portal-organismos-mr/remoteEntry.js",
+        "routePath": "oa-portal-organismos-mr",
+        "exposedModule": "./RegistroPrestadoresServicioModule",
+        "ngModuleName": "RegistroPrestadoresServicioModule",
+        "displayName": "organismosapoyo"
+      },
+      "certificado-inscripcion": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/organismosdeapoyo/certificado-inscripcion/remoteEntry.js",
+        "routePath": "certificado-inscripcion",
+        "exposedModule": "./AppModule",
+        "ngModuleName": "AppModule",
+        "displayName": "AppModule"
+      },
+      "rnma-guia-movilizacion": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/rnma-tramites/ingresar-guia-movilizacion/remoteEntry.js",
+        "routePath": "rnma-guiamovilizacion",
+        "exposedModule": "./IngresarGuiaMovilizacion",
+        "ngModuleName": "IngresarGuiaMovilizacion",
+        "displayName": "RNMA-GuiaMovilizacion"
+      },
+      "consulta-vehiculo": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/consultasyreportespublico/consulta-vehiculo/remoteEntry.js",
+        "routePath": "consulta-vehiculo",
+        "exposedModule": "./ConsultaVehiculoModule",
+        "ngModuleName": "ConsultaVehiculoModule",
+        "displayName": "CYRPublico"
+      },
+      "persona-natural": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/consultasyreportespublico/persona-natural/remoteEntry.js",
+        "routePath": "persona-natural",
+        "exposedModule": "./PersonaNaturalModule",
+        "ngModuleName": "PersonaNaturalModule",
+        "displayName": "CYRPublico"
+      },
+      "consulta-pbv-rigido": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/consultasyreportespublico/consulta-pbv-rigido/remoteEntry.js",
+        "routePath": "consultar-pbv",
+        "exposedModule": "./PbvRigidoModule",
+        "ngModuleName": "PbvRigidoModule",
+        "displayName": "CYRPublico"
+      },
+      "empresa-transporte-internacional": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/consultasyreportespublico/empresa-transporte-internacional/remoteEntry.js",
+        "routePath": "empresa-transporte-internacional",
+        "exposedModule": "./EmpresaTransporteModule",
+        "ngModuleName": "EmpresaTransporteModule",
+        "displayName": "CYRPublico"
+      },
+      "vehiculo-transporte-internacional": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/consultasyreportespublico/vehiculo-transporte-internacional/remoteEntry.js",
+        "routePath": "vehiculo-transporte-internacional",
+        "exposedModule": "./VehiculoTransporteModule",
+        "ngModuleName": "VehiculoTransporteModule",
+        "displayName": "CYRPublico"
+      },
+      "consulta-ciudadano-documento": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/consultasyreportespublico/consulta-ciudadano-documento/remoteEntry.js",
+        "routePath": "consulta-ciudadano-documento",
+        "exposedModule": "./ConsultaCiudadanoDocumentoModule",
+        "ngModuleName": "ConsultaCiudadanoDocumentoModule",
+        "displayName": "CYRPublico"
+      },
+      "migracion-usuario-sdm": {
+        "remoteEntry": "https://portalpublico-mr.runt.gov.co/monorepos/serviciosinformacion/migracion-usuario/remoteEntry.js",
+        "routePath": "migracion-usuario-sdm",
+        "exposedModule": "./MigracionUsuarioModule",
+        "ngModuleName": "MigracionUsuarioModule",
+        "displayName": "MigracionUsuarioModule",
+        "data": {
+          "funcionalidad": "Migraci\u00f3n Usuario SDM"
+        }
+      }
+    }
+  },
+  {
+    "url": "https://portalpublico.runt.gov.co/assets/configuration.prod.json",
+    "data": {
+      "baseUrlApi": "https://runtproapi.runt.gov.co/",
+      "datos-user": "RUNT_USER",
+      "layout": {
+        "cssTheme": "runt-2",
+        "date-locale": "es-CO",
+        "format-date": {
+          "parse": {
+            "dateInput": "dd-MM-YYYY"
+          },
+          "display": {
+            "dateInput": "DD/MM/YYYY",
+            "monthYearLabel": "MMMM YYYY",
+            "dateA11yLabel": "LL",
+            "monthYearA11yLabel": "MMMM YYYY"
+          }
+        },
+        "mat-input": {
+          "appearance": "outline"
+        }
+      }
+    }
+  },
+  {
+    "url": "https://runtproapi.runt.gov.co/cyrconsultavehiculoms/configuracion-sesion",
+    "data": {
+      "tiempoInactividad": "900",
+      "tiempoCuentaRegresiva": "10"
+    }
+  },
+  {
+    "url": "https://runtproapi.runt.gov.co/cyrconsultavehiculoms/tipo-documento",
+    "data": [
+      {
+        "id": "D",
+        "nombre": "Carnet Diplom\u00e1tico   ",
+        "visualizacion": "C.D."
+      },
+      {
+        "id": "C",
+        "nombre": "C\u00e9dula Ciudadan\u00eda",
+        "visualizacion": "C.C."
+      },
+      {
+        "id": "E",
+        "nombre": "C\u00e9dula de Extranjer\u00eda",
+        "visualizacion": "C.E."
+      },
+      {
+        "id": "N",
+        "nombre": "NIT",
+        "visualizacion": "NIT"
+      },
+      {
+        "id": "P",
+        "nombre": "Pasaporte            ",
+        "visualizacion": "P."
+      },
+      {
+        "id": "Y",
+        "nombre": "Permiso por Protecci\u00f3n Temporal",
+        "visualizacion": "P.P.T."
+      },
+      {
+        "id": "U",
+        "nombre": "Registro Civil",
+        "visualizacion": "R.C."
+      },
+      {
+        "id": "T",
+        "nombre": "Tarjeta de Identidad ",
+        "visualizacion": "T.I."
+      }
+    ]
+  },
+  {
+    "url": "https://runtproapi.runt.gov.co/cyrconsultavehiculoms/captcha/valida-captcha-recaptcha",
+    "data": {
+      "tipo": "L",
+      "key": null,
+      "activado": true
+    }
+  },
+  {
+    "url": "https://runtproapi.runt.gov.co/cyrconsultavehiculoms/soat/banner",
+    "data": true
+  },
+  {
+    "url": "https://runtproapi.runt.gov.co/cyrconsultavehiculoms/captcha/libre-captcha/generar",
+    "data": {
+      "error": false,
+      "descripcionRespuesta": null,
+      "id": "d2a74846-fcd6-4aa6-b426-78a779c8216f",
+      "imagen": "data:image/png;base64,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"
+    }
+  },
+  {
+    "url": "https://runtproapi.runt.gov.co/cyrconsultavehiculoms/auth",
+    "data": {
+      "error": false,
+      "descripcionRespuesta": null,
+      "infoVehiculo": {
+        "placa": "FIQ66G",
+        "nombrePais": null,
+        "numLicencia": "10026000764",
+        "estadoAutomotor": "ACTIVO",
+        "tipoServicio": "Particular",
+        "clase": "MOTOCICLETA",
+        "marca": "VICTORY",
+        "linea": "BLACK",
+        "modelo": "2023",
+        "color": "NEGRO MATE",
+        "numSerie": "9GFDTELP3PHB06265",
+        "numMotor": "LJ1P61QMKA21031753",
+        "numChasis": "9GFDTELP3PHB06265",
+        "vin": "9GFDTELP3PHB06265",
+        "cilindraje": "171",
+        "tipoCarroceria": "SIN CARROCERIA",
+        "fechaRegistro": "2022-05-04T11:52:57.000-05:00",
+        "gravamenes": "NO",
+        "organismoTransito": "STRIA TTOYTTE MCPAL DE MADRID",
+        "capacidadCarga": null,
+        "pesoBruto": null,
+        "numeroEjes": null,
+        "idAutomotor": 406368453,
+        "repotenciado": "NO",
+        "idTipoServicio": 1,
+        "idClaseVehiculo": 10,
+        "diasMatriculado": "1375",
+        "prendas": "NO",
+        "clasificacion": "MOTO",
+        "esRegrabadoMotor": "NO",
+        "esRegrabadoChasis": "NO",
+        "esRegrabadoSerie": "NO",
+        "esRegrabadoVin": "NO",
+        "numRegraChasis": null,
+        "numRegraMotor": null,
+        "numRegraSerie": null,
+        "numRegraVin": null,
+        "antiguoClasico": "NO",
+        "tipoCombustible": "GASOLINA",
+        "pasajerosTotal": null,
+        "pasajerosSentados": "2",
+        "vehiculoEnsenanza": "NO",
+        "puertas": null,
+        "importacion": 0,
+        "fechaExpedLTImportacion": null,
+        "fechaVenciLTImportacion": null,
+        "seguridadEstado": "NO",
+        "verValidaDIAN": false,
+        "validacionDIAN": null,
+        "mostrarSolicitudes": "SI",
+        "tipoMaquinaria": null,
+        "subpartida": null,
+        "fechaMatricula": null,
+        "tarjetaRegistro": null,
+        "noIdentificacion": null
+      },
+      "informacionGeneralMaquinaria": null,
+      "informacionGeneralRyS": null,
+      "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJKV1RfQ09OU1VMVEFfQ0lVREFEQU5BIiwicHJvY2VkZW5jaWEiOiJOQUNJT05BTCIsInJldmlzaW9uVGVjbmljb01lY2FuaWNhSW5EVE8iOnsiZXN0YWRvRGVsVmVoaWN1bG8iOiJBQ1RJVk8iLCJjbGFzaWZpY2FjaW9uIjpudWxsLCJpZEF1dG9tb3RvciI6bnVsbCwiaWRDbGFzZSI6MTAsInByb2NlZGVuY2lhIjpudWxsLCJ0aXBvQ29uc3VsdGEiOjAsInJ0bSI6bnVsbCwicnRtTm9ybWFsZXMiOm51bGwsInBsYWNhIjpudWxsLCJkaWFzTWF0cmljdWxhZG8iOiIxMzc1IiwiaWRUaXBvU2VydmljaW8iOjF9LCJkb2N1bWVudG8iOiIxMDMyNDQ0NzA3IiwicnRtIjpudWxsLCJhc2VndXJhZG9yYSI6IiIsInRpcG9Eb2N1bWVudG8iOiJDIiwic2l6ZSI6bnVsbCwidGlwb0NvbnN1bHRhIjoxLCJzb2F0IjpudWxsLCJ2aW4iOm51bGwsImlkTGlicmVDYXB0Y2hhIjoiZDJhNzQ4NDYtZmNkNi00YWE2LWI0MjYtNzhhNzc5YzgyMTZmIiwicGFnZSI6bnVsbCwiZGF0b3NUZWNuaWNvc0luRFRPIjp7ImNsYXNpZmljYWNpb24iOiJNT1RPIiwibnJvUmVnaXN0cm8iOm51bGwsImNhcGFjaWRhZENhcmdhIjpudWxsLCJwZXNvQnJ1dG9WZWhpY3VsYXIiOm51bGwsImlkQ2xhc2VWZWhpY3VsbyI6IjEwIiwibm9FamVzIjpudWxsLCJwYXNhamVyb3NUb3RhbCI6bnVsbCwicGFzYWplcm9zU2VudGFkb3MiOiIyIn0sImV4cCI6MTc3MDUwMjI2MSwiaWF0IjoxNzcwNTAxNjYxLCJpZFJlZ2lzdHJvIjo0MDYzNjg0NTMsInBsYWNhIjoiRklRNjZHIn0.fiEXTcrmytGZwC4BKwZwURKUm3hzk1sIgpepfrKGTFw",
+      "pvoOutDTO": null,
+      "guiaMovilidadOutDTO": null
+    }
+  },
+  {
+    "url": "https://runtproapi.runt.gov.co/cyrconsultavehiculoms/responsabilidad-civil/habilitar",
+    "data": true
+  },
+  {
+    "url": "https://runtproapi.runt.gov.co/cyrconsultavehiculoms/datos-tecnicos",
+    "data": {
+      "capacidadCarga": null,
+      "pesoBrutoVehicular": null,
+      "noEjes": null,
+      "noLlantas": null,
+      "alto": null,
+      "ancho": null,
+      "largo": null,
+      "pasajerosTotal": null,
+      "pasajerosSentados": "2",
+      "rodaje": null,
+      "peso": null
+    }
+  },
+  {
+    "url": "https://runtproapi.runt.gov.co/cyrconsultavehiculoms/soat",
+    "data": [
+      {
+        "origen": "NACIONAL",
+        "tipoTarifa": "120",
+        "numSoat": "85745158",
+        "fechaExpedicion": "2023-06-01T00:00:00.000-05:00",
+        "fechaExpediSoat": "2023-06-01T00:00:00.000-05:00",
+        "fechaInicioPoliza": "2023-06-02T00:00:00.000-05:00",
+        "fechaVencimSoat": "2024-06-01T00:00:00.000-05:00",
+        "razonSocialAsegur": "COMPA\u00d1IA MUNDIAL DE SEGUROS S A",
+        "estado": "NO VIGENTE",
+        "estadoSoat": "EMITIDA",
+        "placa": null,
+        "nombrePais": null
+      },
+      {
+        "origen": "NACIONAL",
+        "tipoTarifa": "121",
+        "numSoat": "1508004956714000",
+        "fechaExpedicion": "2022-05-03T00:00:00.000-05:00",
+        "fechaExpediSoat": "2022-05-03T00:00:00.000-05:00",
+        "fechaInicioPoliza": "2022-05-04T00:00:00.000-05:00",
+        "fechaVencimSoat": "2023-05-03T00:00:00.000-05:00",
+        "razonSocialAsegur": "LA PREVISORA S.A.COMPA\u00d1IA DE SEGUROS",
+        "estado": "NO VIGENTE",
+        "estadoSoat": "EMITIDA",
+        "placa": null,
+        "nombrePais": null
+      }
+    ]
+  },
+  {
+    "url": "https://runtproapi.runt.gov.co/cyrconsultavehiculoms/desintegracion",
+    "data": {
+      "placa": null,
+      "desintegrar": null
+    }
+  }
+]

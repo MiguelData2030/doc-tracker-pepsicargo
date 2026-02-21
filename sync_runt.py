@@ -1,266 +1,335 @@
-import asyncio, json, os, sys, re
+import asyncio, json, os, sys, re, requests
 from datetime import datetime
-from io import BytesIO
-from PIL import Image
-try: import pytesseract
-except ImportError: pytesseract = None
-from playwright.async_api import async_playwright
 
-if pytesseract: pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+import os
+from dotenv import load_dotenv
 
-# Carpeta para guardar capturas crudas (JSON) para análisis posterior
-DUMP_DIR = "runt_dumps"
-if not os.path.exists(DUMP_DIR): os.makedirs(DUMP_DIR)
+load_dotenv()
 
-async def solve_captcha(page):
+# Configuración API Verifik
+VERIFIK_TOKEN = os.getenv("VERIFIK_TOKEN")
+VERIFIK_URL = os.getenv("VERIFIK_URL")
+
+def fetch_verifik(placa, nit, document_type="CC"):
+    """Consulta la API de Verifik para obtener datos del RUNT."""
+    headers = {
+        "Authorization": f"Bearer {VERIFIK_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    params = {
+        "plate": placa,
+        "documentNumber": nit,
+        "documentType": document_type
+    }
+    
     try:
-        selectors = ['img[src^="data:image"]', 'img[alt*="captcha"]', '.captcha-image img']
-        captcha_img = None
-        for sel in selectors:
-            try:
-                captcha_img = await page.wait_for_selector(sel, timeout=5000)
-                if captcha_img: break
-            except: continue
-        
-        if not captcha_img: return None
-
-        img_bytes = await captcha_img.screenshot()
-        img = Image.open(BytesIO(img_bytes)).convert('L')
-        
-        print(f"[*] Captcha bytes: {len(img_bytes)} | Mode: {img.mode} | Size: {img.size}", file=sys.stderr)
-        
-        # Estrategia 1: Imagen original (solo escalada)
-        w, h = img.size
-        base_img = img.resize((w*3, h*3), Image.Resampling.LANCZOS)
-        
-        strategies = []
-        strategies.append(("Raw", base_img))
-        
-        # Estrategia 2: Binarización simple
-        from PIL import ImageOps, ImageFilter
-        s2 = base_img.point(lambda x: 0 if x < 160 else 255, '1')
-        strategies.append(("Threshold 160", s2))
-        
-        # Estrategia 3: Invertir + Binarizar
-        s3 = ImageOps.invert(base_img)
-        s3 = s3.point(lambda x: 0 if x < 160 else 255, '1')
-        strategies.append(("Inverted", s3))
-
-        final_text = ""
-        for name, simg in strategies:
-            extrema = simg.getextrema()
-            print(f"[*] Debug {name}: Extrema {extrema}", file=sys.stderr)
-            
-            # Intentar PSM 7 (Linea), 8 (Palabra), 6 (Bloque)
-            for psm in [7, 8, 6]:
-                try:
-                    txt = pytesseract.image_to_string(simg, config=f'--psm {psm} -c tessedit_char_whitelist=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789').strip()
-                    txt = re.sub(r'[^a-zA-Z0-9]', '', txt)
-                    if txt and len(txt) >= 4:
-                        print(f"[*] Captcha ({name}) [PSM {psm}]: {txt}", file=sys.stderr)
-                        final_text = txt
-                        break
-                except: pass
-            
-            if final_text: break
-            else:
-                print(f"[*] Captcha ({name}): Falló en todos los modos", file=sys.stderr)
-        
-        return final_text
+        response = requests.get(VERIFIK_URL, headers=headers, params=params, timeout=30)
+        # Modo Ahorro: No imprimimos el body para proteger el saldo y la privacidad
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"status": "error", "code": response.status_code, "message": response.text}
     except Exception as e:
-        print(f"[!] Error en OCR: {str(e)}", file=sys.stderr)
-        return None
+        return {"status": "error", "message": f"Connection error: {str(e)}"}
 
-async def run_sync(placa, nit, categoria='PEPSICARGO'):
-    async with async_playwright() as p:
-        # Modo non-headless para ver qué sucede durante el debug si es necesario
-        browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(viewport={'width': 1280, 'height': 800})
-        page = await context.new_page()
-        
-        raw_responses = []
-        captured_data = {"soat": [], "rtm": [], "vehiculo": []}
-
-        async def handle_response(response):
-            try:
-                url = response.url.lower()
-                ctype = await response.header_value("content-type") or ""
-                if "application/json" in ctype:
-                    try:
-                        data = await response.json()
-                        # Guardar todo para auditoría
-                        raw_responses.append({"url": url, "data": data})
-                        
-                        # Clasificación básica
-                        if any(k in url for k in ["poliza", "soat"]): captured_data["soat"].append(data)
-                        elif any(k in url for k in ["revision", "rtm", "tecnica"]): captured_data["rtm"].append(data)
-                        elif any(k in url for k in ["vehiculo", "datos", "auth"]): captured_data["vehiculo"].append(data)
-                    except: pass
-            except: pass
-
-        page.on("response", handle_response)
-
+def fetch_driver_runt(cedula, tipo_doc="CC"):
+    """Consulta la API de Verifik para obtener datos de un CONDUCTOR (Persona)."""
+    headers = {
+        "Authorization": f"Bearer {VERIFIK_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    
+    # Lista de endpoints probables (basado en pruebas anteriores donde algunos fallaron pero uno funcionó)
+    endpoints = [
+        "https://api.verifik.co/v2/co/runt/persona",
+        "https://api.verifik.co/v2/co/runt/conductor",
+        "https://api.verifik.co/v2/co/runt/person",
+        "https://api.verifik.co/v2/co/runt/consult"
+    ]
+    
+    params = {
+        "documentNumber": cedula,
+        "documentType": tipo_doc
+    }
+    
+    last_error = ""
+    
+    for url in endpoints:
         try:
-            url = "https://portalpublico.runt.gov.co/#/consulta-vehiculo/consulta/consulta-ciudadana"
-            print(f"[*] Navegando a RUNT...", file=sys.stderr)
-            await page.goto(url, wait_until="networkidle", timeout=60000)
-            
-            await page.wait_for_selector('input[formcontrolname="placa"]', timeout=45000)
-            await page.fill('input[formcontrolname="placa"]', placa)
-            
-            try:
-                await page.click('mat-select[formcontrolname="tipoDocumento"]')
-                await asyncio.sleep(0.5)
-                await page.click('mat-option:has-text("Cédula")')
-            except: pass
-            
-            await page.fill('input[formcontrolname="documento"]', nit)
-            
-            exito = False
-            for i in range(5): # 5 intentos
-                captcha = await solve_captcha(page)
-                if captcha:
-                    await page.fill('input[formcontrolname*="captcha"]', captcha)
-                    await page.click('button:has-text("Consultar Información")')
-                    await asyncio.sleep(2)
-                    
-                    # Verificar si hay error de captcha
-                    error_msg = page.locator('mat-error')
-                    if await error_msg.count() > 0:
-                        txt = await error_msg.first.inner_text()
-                        if "captcha" in txt.lower():
-                            print(f"[!] Captcha incorrecto, reintentando...", file=sys.stderr)
-                            await page.click('img[src^="data:image"]') # Click para refrescar si el selector existe
-                            await asyncio.sleep(1)
-                            continue
-
-                    try:
-                        # Esperar a que cargue la información o cambie la URL
-                        await page.wait_for_selector('mat-expansion-panel-header', timeout=10000)
-                        exito = True; break
-                    except:
-                        # Si no hay panel, puede ser un error de "Placa no encontrada"
-                        if await page.locator('text=/Vehículo no encontrado|No existe información/i').count() > 0:
-                            return {"status": "error", "message": "El vehículo con placa " + placa + " no existe en RUNT."}
-                        
-                        btn = page.locator('button:has-text("Aceptar")')
-                        if await btn.count() > 0:
-                            await btn.click()
-                            await asyncio.sleep(1)
-            
-            if not exito: return {"status": "error", "message": "Falla al superar el código de seguridad después de varios intentos."}
-
-            print("[*] Expandiendo secciones para forzar carga de JSON...", file=sys.stderr)
-            panels = page.locator("mat-expansion-panel-header")
-            count = await panels.count()
-            for i in range(count):
-                panel = panels.nth(i)
-                text = await panel.inner_text()
-                if any(s in text for s in ["SOAT", "Técnico", "Vehículo", "Información General"]):
-                    print(f"[*] Click en panel: {text.strip()}", file=sys.stderr)
-                    await panel.click()
-                    await asyncio.sleep(1.5) # Esperar a que la red dispare los JSON
-
-            # Procesar datos capturados
-            res = {
-                "placa": placa, 
-                "categoria": categoria, 
-                "status": "success", 
-                "soat": "No encontrado", 
-                "rtm": "No registrado", 
-                "marca": "-", 
-                "modelo": "-",
-                "owner": nit,
-                "datos_tecnicos": {}
-            }
-
-            # Guardar dump para análisis manual si el usuario lo necesita
-            dump_file = os.path.join(DUMP_DIR, f"{placa}_{datetime.now().strftime('%Y%H%M')}.json")
-            with open(dump_file, "w", encoding="utf-8") as f:
-                json.dump(raw_responses, f, indent=2)
-
-            # Extraer SOAT (Tomar el más reciente por fecha de vencimiento)
-            soat_policies = []
-            for sj in captured_data["soat"]:
-                if not isinstance(sj, dict): continue
-                # A veces viene como lista directa o dentro de "listaPolizas"
-                l = sj.get("listaPolizas", []) or (sj if isinstance(sj, list) else [])
-                for p in l:
-                    if isinstance(p, dict) and p.get("fechaVencimSoat") or p.get("fechaVencimiento"):
-                        soat_policies.append(p)
-            
-            # Ordenar por fecha de vencimiento descendente
-            if soat_policies:
-                soat_policies.sort(key=lambda x: x.get("fechaVencimSoat") or x.get("fechaVencimiento"), reverse=True)
-                latest_soat = soat_policies[0]
-                res["soat"] = latest_soat.get("fechaVencimSoat") or latest_soat.get("fechaVencimiento")
-                res["soat_expedicion"] = latest_soat.get("fechaExpediSoat") or latest_soat.get("fechaExpedicion")
-
-            # Extraer RTM
-            rtm_revs = []
-            for rj in captured_data["rtm"]:
-                if not isinstance(rj, dict): continue
-                l = rj.get("listaRevisiones", []) or (rj if isinstance(rj, list) else [])
-                for r in l:
-                    if isinstance(r, dict) and r.get("fechaVencimiento"):
-                        rtm_revs.append(r)
-            
-            if rtm_revs:
-                rtm_revs.sort(key=lambda x: x.get("fechaVencimiento"), reverse=True)
-                latest_rtm = rtm_revs[0]
-                res["rtm"] = latest_rtm.get("fechaVencimiento")
-                res["rtm_expedicion"] = latest_rtm.get("fechaExpedicion")
-
-            # Extraer Datos Vehículo (Prioridad: auth > otros)
-            for vj in captured_data["vehiculo"]:
-                if not isinstance(vj, dict): continue
-                
-                # Caso 1: Estructura Auth (infoVehiculo)
-                if "infoVehiculo" in vj:
-                    iv = vj["infoVehiculo"]
-                    res["marca"] = iv.get("marca") or res["marca"]
-                    res["modelo"] = iv.get("modelo") or res["modelo"]
-                    res["clase"] = iv.get("clase") or "-"
-                    res["datos_tecnicos"] = {
-                        "vin": iv.get("vin") or iv.get("numChasis") or "N/A",
-                        "motor": iv.get("numMotor") or "N/A",
-                        "capacidad": iv.get("capacidadCarga", "0"),
-                        "cilindraje": iv.get("cilindraje", "0")
-                    }
-                    # Si no hay RTM y tenemos fecha registro, estimar
-                    if res["rtm"] == "No registrado" and iv.get("fechaRegistro"):
-                        try:
-                            f_reg = datetime.fromisoformat(iv.get("fechaRegistro").replace('Z', '+00:00'))
-                            # Regla simple: Motos 2 años, Carros 6 años (aprox)
-                            years = 2 if "MOTO" in (iv.get("clase") or "").upper() else 6
-                            f_est = f_reg.replace(year=f_reg.year + years)
-                            res["rtm"] = f_est.strftime("%Y-%m-%d") + " (Estimado)"
-                        except: pass
-                
-                # Caso 2: Estructura standard (data)
-                v = vj.get("data") or vj
-                if isinstance(v, dict) and (v.get("marca") or v.get("modelo")):
-                    res["marca"] = v.get("marca") or res["marca"]
-                    res["modelo"] = v.get("modelo") or res["modelo"]
-                    if not res["datos_tecnicos"]:
-                        res["datos_tecnicos"] = {
-                            "vin": v.get("vin") or v.get("numeroChasis") or "N/A",
-                            "motor": v.get("numeroMotor") or "N/A",
-                            "capacidad": v.get("capacidadCarga", "0")
-                        }
-
-            await browser.close()
-            return res
-
+            # print(f"Probando endpoint: {url}", file=sys.stderr)
+            response = requests.get(url, headers=headers, params=params, timeout=20)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                last_error = f"{response.status_code} {response.text}"
         except Exception as e:
-            print(f"[!] Error crítico: {str(e)}", file=sys.stderr)
-            if browser: await browser.close()
-            return {"status": "error", "message": f"Falla técnica: {str(e)}"}
+            last_error = str(e)
+            
+    return {"status": "error", "message": f"Todos los endpoints fallaron. Último error: {last_error}"}
+
+async def run_sync_driver(cedula, sede, empresa):
+    print(f"[*] Consultando Conductor {cedula}...", file=sys.stderr)
+    
+    api_res = await asyncio.to_thread(fetch_driver_runt, cedula)
+    
+    if api_res.get("data"):
+        data = api_res["data"]
+        
+        # --- EXTRACCIÓN DE DATOS ---
+        fname = data.get('firstName') or data.get('primerNombre') or ""
+        lname = data.get('lastName') or data.get('primerApellido') or ""
+        nombre_completo = f"{fname} {lname}".strip() or data.get('nombreCompleto') or "DESCONOCIDO"
+        
+        # RUNT Info
+        nro_inscripcion = data.get('inscriptionNumber') or data.get('numeroInscripcion')
+        fecha_inscripcion = data.get('inscriptionDate') or data.get('fechaInscripcion')
+        estado = data.get('driverStatus') or data.get('estadoPersona') or "ACTIVO"
+        
+        # --- LICENCIAS (Búsqueda Agresiva de Campos) ---
+        lic_data = (
+            data.get('licenses') or 
+            data.get('licenciasConduccion') or 
+            data.get('licencias') or 
+            data.get('licenciaConduccion') or 
+            data.get('driversLicense') or
+            data.get('licencia') or
+            []
+        )
+        
+        # Normalizar a lista si es un objeto único
+        licencias = [lic_data] if isinstance(lic_data, dict) else lic_data
+        
+        lic_veh = None
+        
+        # Helper para parsear fechas
+        def parse_date(date_str):
+            if not date_str: return '1900-01-01'
+            if isinstance(date_str, dict): 
+                date_str = date_str.get('date') or date_str.get('fecha') or date_str.get('value') or ''
+            
+            date_str = str(date_str).strip()
+            # Formatos comunes: DD/MM/YYYY, YYYY-MM-DD
+            if '/' in date_str:
+                try:
+                    parts = date_str.split('/')
+                    if len(parts) == 3: return f"{parts[2]}-{parts[1]}-{parts[0]}"
+                except: pass
+            return date_str
+            
+        list_c = []
+        list_b = []
+        
+        if isinstance(licencias, list):
+            for lic in licencias:
+                if not isinstance(lic, dict): continue
+                
+                # Búsqueda de Categoría (C1, C2, C3, B1...)
+                cat_val = (
+                    lic.get('category') or
+                    lic.get('categoria') or 
+                    lic.get('clase') or 
+                    lic.get('tipoLicencia') or
+                    lic.get('tipo') or 
+                    ""
+                )
+                cat = str(cat_val).upper()
+                if 'C' in cat:
+                    list_c.append(lic)
+                elif 'B' in cat:
+                    list_b.append(lic)
+                
+        if list_c:
+            list_c.sort(key=lambda x: parse_date(x.get('dueDate') or x.get('fechaVencimiento') or x.get('vencimiento')), reverse=True)
+            lic_veh = list_c[0]
+        elif list_b:
+            list_b.sort(key=lambda x: parse_date(x.get('dueDate') or x.get('fechaVencimiento') or x.get('vencimiento')), reverse=True)
+            lic_veh = list_b[0]
+
+        # Multas / Trámites
+        multas = data.get('multasInfracciones') or []
+        total_multas = len(multas)
+        total_tramites = len(data.get('tramitesRealizados') or [])
+        if isinstance(data.get('tramitesRealizados'), str):
+             try: total_tramites = int(data.get('tramitesRealizados'))
+             except: total_tramites = 0
+             
+        res = {
+            "cedula": cedula,
+            "nombre_completo": nombre_completo,
+            "estado_conductor": estado,
+            "nro_inscripcion_runt": nro_inscripcion,
+            "fecha_inscripcion_runt": fecha_inscripcion,
+            
+            # Licencia Vehículo (Unificada con fallback de campos)
+            "licencia_veh_nro": lic_veh.get('licenceNumber') or lic_veh.get('nroLicencia') or lic_veh.get('numero') if lic_veh else None,
+            "licencia_veh_categoria": lic_veh.get('category') or lic_veh.get('categoria') or lic_veh.get('clase') if lic_veh else None,
+            "licencia_veh_vigencia": lic_veh.get('dueDate') or lic_veh.get('fechaVencimiento') or lic_veh.get('vencimiento') if lic_veh else None,
+            "licencia_veh_expedicion": lic_veh.get('expeditionDate') or lic_veh.get('fechaExpedicion') or lic_veh.get('expedicion') if lic_veh else None,
+            
+            "total_multas": total_multas,
+            "total_tramites": total_tramites,
+            "paz_y_salvo": "NO" if total_multas > 0 else "SI",
+            
+            "categoria_empresa": empresa,
+            "sede": sede,
+            "api_raw_data": api_res
+        }
+        return res
+        
+    return {
+        "status": "error",
+        "message": f"API Falló: {api_res.get('message', 'No se encontraron datos')}"
+    }
+
+async def run_sync(placa, nit, categoria):
+    print(f"[*] Consultando API Verifik para {placa}...", file=sys.stderr)
+    
+    # 1. Intentar con API - Primero como Cédula (CC)
+    api_res = await asyncio.to_thread(fetch_verifik, placa, nit, "CC")
+    
+    # Si falla por "current_owners_dont_match" o error similar, reintentar como NIT
+    need_retry = False
+    if api_res.get("status") == "error":
+        msg = api_res.get("message", "").lower()
+        if "current_owners_dont_match" in msg or "notfound" in msg or api_res.get("code") == 404:
+            need_retry = True
+            
+    if need_retry:
+        print(f"[*] Reintentando como NIT para {placa}...", file=sys.stderr)
+        api_res = await asyncio.to_thread(fetch_verifik, placa, nit, "NIT")
+
+    if api_res.get("data"):
+        data = api_res["data"]
+        # El objeto 'informacionGeneral' tiene la mayoría de los datos técnicos
+        ig = data.get("informacionGeneral", {})
+        
+        res = {
+            "placa": placa,
+            "categoria": categoria,
+            "status": "success",
+            "fuente": "API_VERIFIK",
+            # Datos principales
+            # Información General (ig)
+            # Datos principales con fallbacks agresivos para marca y clase
+            "marca": (
+                ig.get("marca") or 
+                ig.get("brand") or 
+                data.get("marca") or 
+                data.get("brand") or 
+                "-"
+            ),
+            "modelo": ig.get("modelo") or ig.get("modelYear") or "-",
+            "linea": ig.get("linea") or "-",
+            "clase": (
+                ig.get("claseVehiculo") or 
+                ig.get("vehicleClass") or 
+                data.get("claseVehiculo") or 
+                data.get("vehicleClass") or 
+                data.get("clase") or
+                "-"
+            ),
+            "color": ig.get("color") or ig.get("colour") or "-",
+            "combustible": ig.get("tipoCombustible") or "-",
+            "cilindraje": ig.get("cilindraje") or "0",
+            "propietario": data.get("propietario") or "-",
+            "nit_cedula": nit,
+            
+            # Datos técnicos exhaustivos
+            "datos_tecnicos": {
+                "vin": ig.get("noVin") or ig.get("noChasis") or "N/A",
+                "motor": ig.get("noMotor") or "N/A",
+                "chasis": ig.get("noChasis") or "N/A",
+                "serie": ig.get("noSerie") or "N/A",
+                "ejes": ig.get("noEjes") or "0",
+                "pasajeros": ig.get("pasajerosSentados") or "0",
+                "carga": str(ig.get("capacidadCarga", "0")).strip(),
+                "peso_bruto": ig.get("pesoBruto") or "0",
+                "carroceria": ig.get("tipoCarroceria") or "-",
+                "servicio": ig.get("tipoServicio") or "-",
+                "puertas": ig.get("puertas") or "0",
+                "organismo": ig.get("organismoTransito") or "-",
+                "licencia": ig.get("noLicenciaTransito") or "-",
+                "fecha_matricula": ig.get("fechaMatricula") or "-",
+                "repotenciado": ig.get("repotenciado") or "NO",
+                "gravamenes": ig.get("tieneGravamenes") or "NO",
+                "estado_vehiculo": ig.get("estadoDelVehiculo") or "-",
+                "clase_vehiculo": ig.get("claseVehiculo") or "-"
+            },
+            
+            # Documentación
+            "soat": "No encontrado",
+            "soat_vencimiento": None,
+            "soat_expedicion": None,
+            "soat_estado": "-",
+            "rtm": "No registrado",
+            "rtm_vencimiento": None,
+            "rtm_expedicion": None,
+            "rtm_estado": "-",
+            "api_raw_data": api_res
+        }
+        
+        # SOAT (La lista se llama 'soat' en este objeto de Verifik)
+        s_list = data.get("soat", [])
+        if s_list and isinstance(s_list, list):
+            # Ordenar por fecha fin vigencia (formato DD/MM/AAAA requiere parseo para sort exacto, 
+            # pero usualmente el primero es el más reciente)
+            # Para mayor seguridad, confiamos en el campo 'estado' == 'VIGENTE'
+            videntes = [x for x in s_list if x.get("estado") == "VIGENTE"]
+            s = videntes[0] if videntes else s_list[0]
+            
+            res["soat"] = s.get("fechaVencimiento")
+            res["soat_vencimiento"] = s.get("fechaVencimiento")
+            res["soat_expedicion"] = s.get("fechaExpedicion")
+            res["soat_estado"] = s.get("estado") or "-"
+
+        # RTM (La lista se llama 'tecnoMecanica')
+        r_list = data.get("tecnoMecanica", [])
+        if r_list and isinstance(r_list, list):
+            videntes = [x for x in r_list if x.get("vigente") == "SI"]
+            r = videntes[0] if videntes else r_list[0]
+            
+            res["rtm"] = r.get("fechaVencimiento")
+            res["rtm_vencimiento"] = r.get("fechaVencimiento")
+            res["rtm_expedicion"] = r.get("fechaExpedicion")
+            res["rtm_estado"] = r.get("estado") or "-"
+
+        return res
+    
+    return {
+        "status": "error", 
+        "message": f"API Falló: {api_res.get('message', 'Error desconocido')}"
+    }
+    
+    # 2. Si falla API, se podría reincorporar el scraping, pero el usuario pidió API.
+    return {
+        "status": "error", 
+        "message": f"API Falló: {api_res.get('message', 'Error desconocido')}"
+    }
+
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3: sys.exit(1)
-    p, n, c = sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv)>3 else 'PEPSICARGO'
-    res = asyncio.run(run_sync(p, n, c))
+    # Modo Vehículo: python sync_runt.py PLACA NIT CATEGORIA
+    # Modo Conductor: python sync_runt.py --driver CEDULA SEDE EMPRESA
+    
+    if len(sys.argv) < 3:
+        print(json.dumps({"status": "error", "message": "Parámetros insuficientes"}))
+        sys.exit(1)
+
+    if sys.argv[1] == '--driver':
+        # Modo Conductor
+        c, s, e = sys.argv[2], sys.argv[3], sys.argv[4] if len(sys.argv)>4 else 'PEPSICARGO'
+        try:
+            res = asyncio.run(run_sync_driver(c, s, e))
+        except Exception as ex:
+            res = {"status": "error", "message": str(ex)}
+    else:
+        # Modo Vehículo (Default)
+        p, n, c = sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv)>3 else 'PEPSICARGO'
+        try:
+            res = asyncio.run(run_sync(p, n, c))
+        except Exception as ex:
+            res = {"status": "error", "message": str(ex)}
+        
     print("\n---RESULT_START---")
     print(json.dumps(res))
     print("---RESULT_END---")

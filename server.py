@@ -27,8 +27,20 @@ class RuntBridgeHandler(SimpleHTTPRequestHandler):
             try:
                 print(f"[*] Solicitud recibida: {placa} ({categoria})")
                 # Ejecutar script con categoría
+                if query.get('type', ['vehicle'])[0] == 'driver':
+                    # Modo Conductor
+                    cedula = placa # Reusamos var placa como input principal
+                    sede = query.get('sede', [''])[0]
+                    empresa = categoria # Reusamos categoria como empresa
+                    
+                    print(f"[*] Solicitud Conductor: {cedula} ({empresa})")
+                    cmd = [sys.executable, 'sync_runt.py', '--driver', cedula, sede, empresa]
+                else:
+                    # Modo Vehículo
+                    cmd = [sys.executable, 'sync_runt.py', placa, nit, categoria]
+
                 result = subprocess.run(
-                    [sys.executable, 'sync_runt.py', placa, nit, categoria],
+                    cmd,
                     capture_output=True,
                     text=True,
                     timeout=300

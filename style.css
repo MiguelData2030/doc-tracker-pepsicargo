@@ -26,6 +26,7 @@ body {
     display: flex;
     min-height: 100vh;
     overflow-x: hidden;
+    /* Mantener esto pero asegurar que dentro haya scroll */
 }
 
 /* --- SIDEBAR --- */
@@ -95,6 +96,12 @@ body {
     margin-left: 260px;
     flex: 1;
     padding: 2rem 3rem;
+    width: calc(100vw - 260px);
+    /* Ancho exacto restando la sidebar */
+    max-width: calc(100vw - 260px);
+    overflow-x: hidden;
+    /* Evitar scroll en el cuerpo principal */
+    min-width: 0;
 }
 
 header {
@@ -187,7 +194,56 @@ h2 {
 }
 
 .table-responsive {
-    overflow-x: auto;
+    width: 100%;
+    max-width: 100%;
+    max-height: 85vh;
+    overflow-x: auto !important;
+    /* Usar auto para que aparezca solo si desborda */
+    overflow-y: auto;
+    padding-bottom: 25px;
+    margin-bottom: 10px;
+    background: #0a0a0a;
+    border-radius: 12px;
+    display: block;
+    position: relative;
+    border: 1px solid var(--border-color);
+
+    /* Scrollbar para Firefox */
+    scrollbar-width: auto;
+    scrollbar-color: #333333 #111111;
+}
+
+/* Forzar aparición de scrollbar en Webkit */
+.table-responsive::-webkit-scrollbar {
+    height: 18px !important;
+    /* Más alto para facilitar el agarre en 4K */
+    width: 18px !important;
+    display: block !important;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #111111 !important;
+    /* Track muy oscuro para contraste */
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #333333 !important;
+    /* Gris oscuro neutro */
+    border-radius: 10px;
+    border: 4px solid #111111;
+    /* Borde grueso para que el thumb resalte sin ser chillón */
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #444444 !important;
+    /* Un poco más claro en hover */
+    cursor: grab;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:active {
+    cursor: grabbing;
 }
 
 table {
@@ -196,22 +252,57 @@ table {
     border-spacing: 0 10px;
 }
 
+/* Solo las tablas de VEHÍCULOS necesitan este scroll masivo */
+#section-fleet table {
+    min-width: 6500px !important;
+    /* Aumentado para asegurar desbordamiento en monitores gigantes */
+    width: 6500px !important;
+    table-layout: fixed !important;
+    /* Forzar celdas a respetar anchos */
+}
+
+/* Tablas de conductores y dashboard: Responsivas normales sin scroll forzado */
+#section-drivers table,
+#section-dashboard table {
+    min-width: 100% !important;
+    width: 100% !important;
+    table-layout: auto;
+}
+
+/* Optimización para Dashboard en Pantallas Gigantes */
+#section-dashboard .stats-grid,
+#section-dashboard .dashboard-row,
+#section-dashboard .section-container {
+    max-width: 1400px;
+    /* Evitar que las tarjetas se estiren demasiado en 32" */
+    margin-left: auto;
+    margin-right: auto;
+}
+
 th {
     text-align: left;
     color: var(--text-muted);
     font-weight: 600;
-    padding: 8px 12px;
-    font-size: 0.8rem;
+    padding: 12px 15px;
+    font-size: 0.85rem;
     white-space: nowrap;
+    min-width: 150px;
+    /* Forzar un ancho minimo por columna para causar desbordamiento */
+    background: rgba(0, 0, 0, 0.4);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 td {
-    padding: 6px 12px;
+    padding: 8px 15px;
     background: rgba(255, 255, 255, 0.02);
     border-top: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
     white-space: nowrap;
-    /* Evita que los datos se amontonen verticalmente */
+    min-width: 150px;
+    /* Evitar compresión en 4K */
+    font-size: 0.85rem;
 }
 
 td:first-child {
@@ -319,6 +410,28 @@ button.secondary {
     background: rgba(255, 255, 255, 0.05);
     color: white;
     border: 1px solid var(--border-color);
+}
+
+.btn-icon {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    color: var(--text-main);
+    text-decoration: none;
+    min-width: 32px;
+    height: 32px;
+}
+
+.btn-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-green);
+    transform: translateY(-2px);
 }
 
 /* Animations */
@@ -499,7 +612,114 @@ input:checked+.slider:before {
     max-width: 1600px;
     padding: 0 2rem;
 }
-/* AJUSTE FINAL PARA ANCHO COMPLETO - FASE 5 */
-.main-wrapper { max-width: 98% !important; padding: 0 1rem; }
-table { width: 100% !important; }
 
+/* AJUSTE FINAL PARA ANCHO COMPLETO - FASE 5 */
+.main-wrapper {
+    width: calc(100vw - 260px) !important;
+    max-width: calc(100vw - 260px) !important;
+    padding: 0 1rem;
+    overflow-x: hidden;
+}
+
+.section-container {
+    max-width: 100%;
+    overflow: hidden;
+    /* Asegurar que nada salga del contenedor de la sección */
+}
+
+table {
+    width: 100% !important;
+}
+
+/* --- ONBOARDING & RESULTS PANEL --- */
+.onboarding-layout,
+#section-admin .stats-grid {
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+.onboarding-layout {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 2rem;
+    align-items: start;
+}
+
+.results-dataframe {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 1.5rem;
+    min-height: 500px;
+    max-height: 700px;
+    overflow-y: auto;
+}
+
+.results-dataframe h3 {
+    font-size: 1rem;
+    color: var(--accent-green);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.data-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.data-item .label {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.data-item .value {
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.section-tag {
+    font-size: 0.7rem;
+    color: var(--accent-green);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 0.8rem;
+    font-weight: 700;
+    opacity: 0.8;
+}
+
+.data-item .value.highlight {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--accent-green);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 1rem;
+}
+
+.sync-section {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.empty-results {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    text-align: center;
+    gap: 1rem;
+}
+
+@media (max-width: 1000px) {
+    .onboarding-layout {
+        grid-template-columns: 1fr;
+    }
+}

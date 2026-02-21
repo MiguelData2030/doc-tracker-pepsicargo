@@ -1,6 +1,4 @@
-.venv/
+.env
 __pycache__/
 *.pyc
-.env
-debug_*.png
-debug_*.html
+.DS_Store

@@ -52,13 +52,13 @@
                 <li class="nav-item active" onclick="showSection('dashboard')">
                     <i data-lucide="layout-dashboard"></i> Dashboard
                 </li>
-                <li class="nav-item" onclick="showFleet('PEPSICARGO')">
+                <li id="nav-pepsicargo" class="nav-item" onclick="showFleet('PEPSICARGO')">
                     <i data-lucide="truck"></i> Flota PepsiCargo
                 </li>
-                <li class="nav-item" onclick="showFleet('PROPIA')">
+                <li id="nav-propia" class="nav-item" onclick="showFleet('PROPIA')">
                     <i data-lucide="truck"></i> Flota Propia
                 </li>
-                <li class="nav-item" onclick="showFleet('CORP')">
+                <li id="nav-corp" class="nav-item" onclick="showFleet('CORP')">
                     <i data-lucide="truck"></i> V. Corporativos
                 </li>
 
@@ -66,20 +66,20 @@
                 <li class="nav-header"
                     style="font-size: 0.7rem; color: var(--text-muted); margin: 1rem 0 0.5rem 1rem; text-transform: uppercase; letter-spacing: 1px;">
                     Conductores</li>
-                <li class="nav-item" onclick="showDriverSection('PEPSICARGO')">
+                <li id="nav-driver-pepsicargo" class="nav-item" onclick="showDriverSection('PEPSICARGO')">
                     <i data-lucide="id-card"></i> Cond. PepsiCargo
                 </li>
-                <li class="nav-item" onclick="showDriverSection('PROPIA')">
+                <li id="nav-driver-propia" class="nav-item" onclick="showDriverSection('PROPIA')">
                     <i data-lucide="id-card"></i> Cond. Flota Propia
                 </li>
 
-                <li class="nav-header"
+                <li class="nav-header" id="header-gestion"
                     style="font-size: 0.7rem; color: var(--text-muted); margin: 1rem 0 0.5rem 1rem; text-transform: uppercase; letter-spacing: 1px;">
                     Gestión</li>
-                <li class="nav-item" onclick="showSection('new-driver')">
+                <li id="nav-new-driver" class="nav-item" onclick="showSection('new-driver')">
                     <i data-lucide="user-plus"></i> Nuevo Conductor
                 </li>
-                <li class="nav-item" onclick="showSection('onboarding')">
+                <li id="nav-onboarding" class="nav-item" onclick="showSection('onboarding')">
                     <i data-lucide="plus-circle"></i> Nuevo Vehículo
                 </li>
 
@@ -91,12 +91,13 @@
                 </li>
             </ul>
 
-            <div class="user-badge glass" style="margin-bottom: 10px;">
-                <i data-lucide="user"></i>
-                <span id="user-mail">Invitado</span>
-                <span id="current-rol" class="role-tag">Cargando</span>
+            <div class="user-badge" id="user-badge-container">
+                <span id="user-mail" class="user-mail">Invitado</span>
+                <span id="current-rol" class="role-tag role-admin">ADMIN</span>
             </div>
-            <button class="secondary" onclick="handleLogout()" style="width: 100%; font-size: 0.8rem; padding: 8px;">
+
+            <button class="secondary" onclick="handleLogout()"
+                style="width: 100%; font-size: 0.8rem; padding: 8px; margin-top: 10px;">
                 <i data-lucide="log-out" size="14"></i> Cerrar Sesión
             </button>
         </nav>
@@ -105,9 +106,10 @@
         <div class="main-wrapper">
             <header>
                 <div>
-                    <h1 style="font-size: 1.8rem;">Control de Flota Global</h1>
-                    <p id="system-status" style="color: var(--text-muted); margin-top: 5px;">
-                        <span class="semaforo bg-success" style="width: 8px; height: 8px;"></span> Sistema Conectado
+                    <h1 id="main-page-title" style="font-size: 1.8rem;">Control de Flota Global</h1>
+                    <p id="system-status"
+                        style="color: var(--text-muted); margin-top: 5px; display: flex; align-items: center; gap: 8px;">
+                        <span class="semaforo bg-success"></span> Sistema Conectado
                     </p>
                 </div>
                 <div style="display: flex; gap: 1rem; align-items: center;">
@@ -329,8 +331,8 @@
 
             <!-- SECCIÓN: ONBOARDING -->
             <section id="section-onboarding" style="display:none;">
-                <div class="section-container" style="max-width: 100%; margin: 0 auto;">
-                    <h2>Registro Único de Vehículo</h2>
+                <div class="section-container" style="max-width: 1100px; margin: 0 auto;">
+                    <h2 style="margin-bottom: 2rem; text-align: center;">Registro Único de Vehículo</h2>
                     <div class="onboarding-layout">
                         <!-- Lado Izquierdo: Formulario -->
                         <form id="onboarding-form" class="glass-form">
@@ -408,8 +410,8 @@
 
             <!-- SECCIÓN: NUEVO CONDUCTOR (ONBOARDING) -->
             <section id="section-new-driver" style="display:none;">
-                <div class="section-container" style="max-width: 100%; margin: 0 auto;">
-                    <h2>Registro Único de Conductor</h2>
+                <div class="section-container" style="max-width: 1100px; margin: 0 auto;">
+                    <h2 style="margin-bottom: 2rem; text-align: center;">Registro Único de Conductor</h2>
                     <div class="onboarding-layout">
                         <!-- Lado Izquierdo: Formulario -->
                         <form id="driver-form" class="glass-form">
@@ -550,15 +552,14 @@
                                 <i data-lucide="save"></i> Actualizar Cambios
                             </button>
                         </div>
-                        <div class="table-responsive">
-                            <table>
+                        <div class="table-responsive" style="overflow: visible;">
+                            <table style="table-layout: fixed; width: 100%;">
                                 <thead>
                                     <tr>
-                                        <th>EMAIL</th>
-                                        <th>ROL</th>
-                                        <th>ESTADO</th>
-                                        <th>CONTRASEÑA</th>
-                                        <th>ACCIONES</th>
+                                        <th style="width: 35%;">EMAIL</th>
+                                        <th style="width: 25%;">ROL</th>
+                                        <th style="width: 10%; text-align: center;">ESTADO</th>
+                                        <th style="width: 30%;">CONFIGURACIÓN</th>
                                     </tr>
                                 </thead>
                                 <tbody id="user-table-body">
@@ -582,10 +583,10 @@
                             <div class="input-group" style="margin-bottom: 1.5rem;">
                                 <label>Perfil de Acceso</label>
                                 <select id="u_rol">
-                                    <option value="ADMIN">Administrador (Total)</option>
-                                    <option value="GERENCIA">Gerencia (Solo Lectura)</option>
-                                    <option value="VISOR_PARCIAL">Visor Parcial (Pepsi/Propia)</option>
-                                    <option value="VISOR_TOTAL">Visor Total (Pepsi/Propia/Corp)</option>
+                                    <option value="ADMIN">Rol Administrador</option>
+                                    <option value="GERENCIA">Rol Gerencia</option>
+                                    <option value="LIDERES">Rol Líder</option>
+                                    <option value="FLOTA">Rol Flota</option>
                                 </select>
                             </div>
                             <button type="submit" style="width: 100%; justify-content: center;">Crear Acceso</button>
@@ -669,7 +670,8 @@
                 </div>
             </div>
         </div>
-
+        <!-- CORE LOGIC -->
+        <script src="config.js"></script>
         <script src="app.js"></script>
         <script>
             // Lucide Initialization

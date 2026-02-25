@@ -1,21 +1,15 @@
-// --- CONFIGURACIÓN SUPABASE ---
-// Si las keys están vacías, entrará en MODO DEMO automáticamente
-const SUPABASE_URL = 'https://jfnbneovnwiuwjymhmoz.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_FUrIo6x2EZdcl7qfi2aBKA_PZlMXBF_';
+// --- CONFIGURACIÓN SEGURA ---
+const SUPABASE_URL = typeof SUPABASE_CONFIG !== 'undefined' ? SUPABASE_CONFIG.url : 'URL_PROYECTO';
+const SUPABASE_ANON_KEY = typeof SUPABASE_CONFIG !== 'undefined' ? SUPABASE_CONFIG.anonKey : 'KEY_ANON';
 
 let supabaseClient = null;
 let currentUser = null;
 let currentRole = null;
 let isDemoMode = false;
-let pendingChanges = {}; // Para el guardado por lotes en Admin
+let pendingChanges = {};
 
-// --- MOCK USERS PARA VALIDACIÓN ---
-const MOCK_USERS = [
-    { email: 'admin@pepsico.com', pass: 'Pepsi2026*', rol: 'ADMIN', nombre: 'Admin Master', activo: true },
-    { email: 'gerencia@pepsico.com', pass: 'Gerencia2026*', rol: 'GERENCIA', nombre: 'Director Operaciones', activo: true },
-    { email: 'visor.parcial@pepsico.com', pass: 'Visor2026*', rol: 'VISOR_PARCIAL', nombre: 'Analista Jr', activo: true },
-    { email: 'visor.total@pepsico.com', pass: 'VisorTotal2026*', rol: 'VISOR_TOTAL', nombre: 'Coordinador Regional', activo: true }
-];
+// --- MOCK USERS ---
+const MOCK_USERS = typeof APP_MOCK_USERS !== 'undefined' ? APP_MOCK_USERS : [];
 
 // --- MOCK DATA PARA DEMO ---
 const MOCK_FLOTA = [
@@ -230,6 +224,23 @@ function showSection(sectionId) {
     const target = document.getElementById(`section-${sectionId}`);
     if (target) target.style.display = 'block';
 
+    // Dinamismo de Título (General)
+    const titleEl = document.getElementById('main-page-title');
+    if (titleEl) {
+        const titles = {
+            'dashboard': 'Control de Flota Global',
+            'onboarding': 'Registro de Nuevo Vehículo',
+            'new-driver': 'Registro de Nuevo Conductor',
+            'admin': 'Administración de Usuarios',
+            'fleet': 'Inventario de Flota',
+            'drivers': 'Gestión de Conductores'
+        };
+        // Solo actualizamos aquí si no es drivers/fleet para evitar sobreescritura inmediata
+        if (sectionId !== 'fleet' && sectionId !== 'drivers') {
+            titleEl.innerText = titles[sectionId] || 'Control de Flota Global';
+        }
+    }
+
     // Ocultar botón Sincronizar RUNT en Admin
     const syncBtn = document.getElementById('btn-sync-runt');
     if (syncBtn) {
@@ -246,6 +257,31 @@ function showSection(sectionId) {
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
         if (item.getAttribute('onclick')?.includes(`'${sectionId}'`)) {
+            item.classList.add('active');
+        }
+    });
+}
+
+function showFleet(category) {
+    window.currentFleetCategory = category;
+    showSection('fleet');
+    loadFleetData();
+
+    // Dinamismo de Título para Flota
+    const titleEl = document.getElementById('main-page-title');
+    if (titleEl) {
+        const catTitles = {
+            'PEPSICARGO': 'Inventario Flota PepsiCargo',
+            'PROPIA': 'Inventario Flota Propia',
+            'CORP': 'Inventario Vehículos Corporativos'
+        };
+        titleEl.innerText = catTitles[category] || 'Control de Flota Global';
+    }
+
+    // Seleccionado en Nav
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('onclick')?.includes(`showFleet('${category}')`)) {
             item.classList.add('active');
         }
     });
@@ -1474,24 +1510,49 @@ function showFleet(category) {
 
 function updateUIForRole() {
     const mail = document.getElementById('user-mail');
-    const rol = document.getElementById('current-rol');
+    const rolLabel = document.getElementById('current-rol');
+
+    if (!currentUser) return;
 
     mail.innerText = currentUser.email;
-    rol.innerText = currentRole;
+    rolLabel.innerText = currentRole;
 
-    // Admin visibility
-    const isAdmin = (currentRole === 'ADMIN' || currentRole === 'SUPER_ADMIN');
+    // Reset role classes
+    rolLabel.className = 'role-tag';
+    if (currentRole === 'ADMIN') rolLabel.classList.add('role-admin');
+    else if (currentRole === 'LIDERES') rolLabel.classList.add('role-lideres');
+    else if (currentRole === 'FLOTA') rolLabel.classList.add('role-flota');
+    else if (currentRole === 'GERENCIA') rolLabel.classList.add('role-gerencia');
+
+    // Navigation & RBAC Logic
+    const isAdmin = (currentRole === 'ADMIN');
+    const isLider = (currentRole === 'LIDERES');
+    const isFlota = (currentRole === 'FLOTA');
+    const isGerente = (currentRole === 'GERENCIA');
+
+    // Sidebar items visibility
+    const navItems = {
+        'nav-pepsicargo': isAdmin || isLider || isGerente,
+        'nav-driver-pepsicargo': isAdmin || isLider || isGerente,
+        'nav-propia': isAdmin || isFlota || isGerente,
+        'nav-corp': isAdmin || isFlota || isGerente,
+        'nav-driver-propia': isAdmin || isFlota || isGerente,
+        'header-gestion': isAdmin || isLider || isFlota || isGerente,
+        'nav-new-driver': isAdmin || isLider || isFlota || isGerente,
+        'nav-onboarding': isAdmin || isLider || isFlota || isGerente
+    };
+
+    for (const [id, visible] of Object.entries(navItems)) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = visible ? 'flex' : 'none';
+    }
+
+    // Admin headers and specific sections
     const adminItems = document.querySelectorAll('.admin-only');
     adminItems.forEach(el => el.style.display = isAdmin ? 'flex' : 'none');
 
-    // Header especifico de Admin
     const adminHeader = document.getElementById('header-admin');
     if (adminHeader) adminHeader.style.display = isAdmin ? 'block' : 'none';
-
-    // Action restrictions
-    const onboardingNav = document.querySelector('.nav-item[onclick*="onboarding"]');
-    // Permitir a gestores también? Por ahora solo admin/gestor
-    // if (onboardingNav) onboardingNav.style.display = restrictActions ? 'none' : 'flex';
 }
 
 function showDriverSection(category) {
@@ -1952,36 +2013,35 @@ async function loadUsersList() {
         if (!activeStatus) tr.classList.add('user-row-blocked');
 
         tr.innerHTML = `
-    < td > ${email}</td >
+            <td>${email}</td>
             <td>
                 <select class="minimal-select" onchange="trackAdminChange('${email}', 'rol', this.value)" 
-                        style="background: rgba(0, 168, 89, 0.1); color: var(--accent-green); border: none; padding: 4px 8px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.75rem;">
-                    <option value="ADMIN" ${u.rol === 'ADMIN' ? 'selected' : ''}>ADMIN</option>
-                    <option value="GERENCIA" ${u.rol === 'GERENCIA' ? 'selected' : ''}>GERENCIA</option>
-                    <option value="VISOR_PARCIAL" ${u.rol === 'VISOR_PARCIAL' ? 'selected' : ''}>VISOR_PARCIAL</option>
-                    <option value="VISOR_TOTAL" ${u.rol === 'VISOR_TOTAL' ? 'selected' : ''}>VISOR_TOTAL</option>
+                        style="background: rgba(0, 168, 89, 0.1); color: var(--accent-green); border: none; padding: 4px 8px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.7rem; width: 100%;">
+                    <option value="ADMIN" ${u.rol === 'ADMIN' ? 'selected' : ''}>Rol Administrador</option>
+                    <option value="GERENCIA" ${u.rol === 'GERENCIA' ? 'selected' : ''}>Rol Gerencia</option>
+                    <option value="LIDERES" ${u.rol === 'LIDERES' ? 'selected' : ''}>Rol Líder</option>
+                    <option value="FLOTA" ${u.rol === 'FLOTA' ? 'selected' : ''}>Rol Flota</option>
                 </select>
             </td>
-            <td>
+            <td style="text-align: center;">
                 <label class="switch">
                     <input type="checkbox" ${activeStatus ? 'checked' : ''} onchange="trackAdminChange('${email}', 'activo', this.checked)">
                     <span class="slider"></span>
                 </label>
             </td>
-            <td>
-                <div style="display: flex; align-items: center; gap: 8px;">
+            <td style="padding-right: 15px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border-color);">
                     <input type="password" value="${u.pass || '********'}" readonly 
-                           style="background: transparent; border: none; padding: 0; width: 100px; color: var(--text-muted); font-size: 0.9rem;" 
+                           style="background: transparent; border: none; padding: 0; width: 80px; color: var(--text-muted); font-size: 0.85rem;" 
                            id="pass-${safeId}">
-                    <button class="secondary" style="padding: 4px;" onclick="togglePassView('${safeId}')">
+                    <button class="secondary" style="padding: 4px; border: none; background: transparent;" onclick="togglePassView('${safeId}')">
                         <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
                     </button>
+                    <div style="width: 1px; height: 16px; background: var(--border-color);"></div>
+                    <button class="secondary" style="padding:4px; border: none; background: transparent;" onclick="deleteUserPrompt('${email}')">
+                        <i data-lucide="trash-2" style="color: var(--danger); width: 14px; height: 14px;"></i>
+                    </button>
                 </div>
-            </td>
-            <td>
-                <button class="secondary" style="padding:5px;" onclick="deleteUserPrompt('${email}')">
-                    <i data-lucide="trash-2" style="color: var(--danger)"></i>
-                </button>
             </td>
 `;
         tbody.appendChild(tr);
